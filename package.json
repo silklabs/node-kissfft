@@ -1,6 +1,6 @@
 {
   "name": "kissfft",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "FFT for node using kissfft.",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/andreasgal/node-kissfft.git"
+    "url": "https://github.com/silklabs/node-kissfft.git"
   },
   "license": "BSD",
   "dependencies": {
