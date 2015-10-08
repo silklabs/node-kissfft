@@ -25,10 +25,10 @@ function test(name, input) {
     var output = [];
     (new ref(input.length, false)).simple(output, complex, 'complex');
     test.expect(4);
-    fft(Float32Array(complex), Float32Array(output.length), function (err, result) {
+    fft(new Float32Array(complex), new Float32Array(output.length), function (err, result) {
       test.ok(!err);
       test.ok(compare(output, result));
-      fft(Float32Array(input), Float32Array(input.length+2), function (err, result_r) {
+      fft(new Float32Array(input), new Float32Array(input.length+2), function (err, result_r) {
         test.ok(!err);
         test.ok(result_r, result);
         test.done();
