@@ -94,7 +94,7 @@ NAN_METHOD(_fft) {
   Nan::HandleScope scope;
 
   // Note: IsFloat32Array is an experimental feature...
-  if (!info[0]->IsFloat32Array() || !info[0]->IsFloat32Array()) {
+  if (!info[0]->IsFloat32Array() || !info[1]->IsFloat32Array()) {
     Nan::ThrowTypeError("Float32Array expected");
     return;
   }
@@ -122,8 +122,55 @@ NAN_METHOD(_fft) {
   }
 }
 
+NAN_METHOD(_fftSync) {
+  Nan::HandleScope scope;
+
+  // Note: IsFloat32Array is an experimental feature...
+  if (!info[0]->IsFloat32Array() || !info[1]->IsFloat32Array()) {
+    Nan::ThrowTypeError("Float32Array expected");
+    return;
+  }
+
+  Local<Float32Array> input = info[0].As<Float32Array>();
+  Local<Float32Array> output = info[1].As<Float32Array>();
+
+  int input_len = input->Length();
+  int output_len = output->Length();
+  if (input_len != output_len && input_len + 2 != output_len) {
+    Nan::ThrowTypeError("Mismatch of array length for input and output");
+    return;
+  }
+  if (output_len & 1) {
+    Nan::ThrowTypeError("Output array must have an even number of elements");
+    return;
+  }
+
+  kiss_fft_cpx* out = (kiss_fft_cpx*) output->Buffer()->GetContents().Data();
+  if (input_len == output_len) {
+    // Complex input, "normal" FFT.
+    size_t nfft = input_len / 2;
+    fft::kiss_fft_cfg cfg = fft::kiss_fft_alloc(nfft, false, 0, 0);
+    const kiss_fft_cpx* in = (const kiss_fft_cpx*) input->Buffer()->GetContents().Data();
+
+    FFT(cfg, in, out);
+
+    fft::kiss_fft_free(cfg);
+  } else {
+    // Real-value input, optimized FFT.
+    size_t nfft = input_len;
+    fftr::kiss_fftr_cfg cfg = fftr::kiss_fftr_alloc(nfft, false, 0, 0);
+    const kiss_fft_scalar* in = (const kiss_fft_scalar*) input->Buffer()->GetContents().Data();
+
+    FFT(cfg, in, out);
+    
+    fftr::kiss_fftr_free(cfg);
+  }
+  info.GetReturnValue().Set(output);
+}
+
 static void Init(Handle<Object> exports) {
   exports->Set(Nan::New("fft").ToLocalChecked(), Nan::New<FunctionTemplate>(_fft)->GetFunction());
+  exports->Set(Nan::New("fftSync").ToLocalChecked(), Nan::New<FunctionTemplate>(_fftSync)->GetFunction());
 }
 
 NODE_MODULE(kissfft, Init)
