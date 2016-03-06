@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-var fft = require('./index').fft;
+var kiss = require('./index');
 var ref = require('fft').complex;
 
 function compare(a, b) {
@@ -24,13 +24,25 @@ function test(name, input) {
     });
     var output = [];
     (new ref(input.length, false)).simple(output, complex, 'complex');
-    test.expect(4);
-    fft(new Float32Array(complex), new Float32Array(output.length), function (err, result) {
+    test.expect(7);
+    var syncResult = kiss.fftSync(new Float32Array(complex),
+                             new Float32Array(output.length));
+    test.ok(syncResult !== null);
+    test.ok(compare(output, syncResult));
+    kiss.fft(new Float32Array(complex), new Float32Array(output.length), function (err, result) {
       test.ok(!err);
       test.ok(compare(output, result));
-      fft(new Float32Array(input), new Float32Array(input.length+2), function (err, result_r) {
+
+      var syncResult_r = kiss.fftSync(new Float32Array(input),
+                                      new Float32Array(input.length+2));
+      // NB: the order of the arguments to `compare()` is important,
+      // because `result_r` only contains the first half of the
+      // transform; we only want to compare that half.
+      test.ok(compare(syncResult_r, result));
+      kiss.fft(new Float32Array(input), new Float32Array(input.length+2), function (err, result_r) {
         test.ok(!err);
-        test.ok(result_r, result);
+        // See above about order of arguments.
+        test.ok(compare(result_r, result));
         test.done();
       });
     });
